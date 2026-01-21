@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from typing import List, Tuple
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
+import re
 
 
 @dataclass
@@ -94,13 +95,37 @@ class SimpleRAG:
                 "chunk_id": chunk.chunk_id,
                 "score": round(score, 4),
             })
-        # Heuristic summary: first 2 sentences from best chunk
+        # Improved heuristic summary: pick the sentence most likely to contain the requirement
         summary = ""
         if hits:
-            best_text = hits[0][0].text.strip().replace("\n", " ")
-            sentences = [s.strip() for s in best_text.split('.') if s.strip()]
-            summary = '. '.join(sentences[:2])
-            if summary and not summary.endswith('.'): summary += '.'
+            # Build simple keyword set from the question
+            q_tokens = [t.lower() for t in re.findall(r"[A-Za-z%$]+", question)]
+            q_keywords = {t for t in q_tokens if len(t) >= 3}
+
+            def score_sentence(s: str) -> int:
+                s_l = s.lower()
+                # keyword matches
+                kw_hits = sum(1 for k in q_keywords if k in s_l)
+                # presence of numbers, currency or percentages often indicate requirements
+                numeric = 1 if re.search(r"\d", s_l) else 0
+                symbols = 0
+                symbols += 1 if "$" in s_l else 0
+                symbols += 1 if "%" in s_l else 0
+                # favor shorter, direct sentences
+                length_penalty = -1 if len(s) > 240 else 0
+                return kw_hits * 3 + numeric * 2 + symbols * 2 + length_penalty
+
+            candidates: List[str] = []
+            for chunk, _ in hits:
+                text = chunk.text.replace("\n", " ")
+                # split by punctuation boundaries
+                parts = [p.strip() for p in re.split(r"(?<=[.!?])\s+", text) if p.strip()]
+                candidates.extend(parts)
+            if candidates:
+                best = max(candidates, key=score_sentence)
+                summary = best
+                if summary and summary[-1] not in ".!?":
+                    summary += "."
         return {
             "question": question,
             "summary": summary,

@@ -12,3 +12,15 @@ __pycache__/
 .DS_Store
 .vscode/
 .idea/
+.env
+
+# Local artifacts
+chroma_db/
+evaluation_report.json
+*.log
+.cache/
+.huggingface/
+.mypy_cache/
+.coverage*
+coverage.xml
+chroma_db/
