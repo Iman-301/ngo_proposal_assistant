@@ -31,6 +31,10 @@ python -m app.cli "What reports are required?" --pretty
 python tests/evaluate.py
 ```
 
+5. (Optional) PDF RAG, offline embeddings (no OpenAI key):
+- Place PDFs in `kb/`.
+- Run a small script that uses `PDFRAG` (see `app/pdf_rag.py`): load PDFs, build vector store, call `create_retriever()`, then `answer(question)`. This path uses local `sentence-transformers` embeddings and no LLM/API calls.
+
 ## Add Your Documents
 - Put donor RFPs, guidelines, and proposal templates in `kb/` as `.md` or `.txt`.
 - For a custom path: `python -m app.cli --kb path/to/your/kb --pretty`.
@@ -49,3 +53,4 @@ python tests/evaluate.py
 ## Notes
 - This project intentionally avoids external APIs to run fully offline.
 - Replace the sample KB with your actual donor materials for real accuracy.
+- The PDF RAG path (`app/pdf_rag.py`) now uses local embeddings (HuggingFace). You can ignore `OPENAI_API_KEY` unless you re-enable OpenAI models.
