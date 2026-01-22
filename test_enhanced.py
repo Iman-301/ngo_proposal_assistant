@@ -17,7 +17,6 @@ except ImportError as e:
     print(f"[ERROR] Failed to import: {e}")
     sys.exit(1)
 
-# Initialize without LLM
 print("\n[TEST 1] Initializing Enhanced RAG (no LLM)...")
 try:
     rag_no_llm = EnhancedPDFRAG(use_llm=False)
@@ -26,7 +25,6 @@ except Exception as e:
     print(f"[ERROR] Failed to initialize: {e}")
     sys.exit(1)
 
-# Initialize with Ollama
 print("\n[TEST 2] Initializing Enhanced RAG with Ollama...")
 try:
     rag_with_llm = EnhancedPDFRAG(use_llm=True, llm_type="ollama")
