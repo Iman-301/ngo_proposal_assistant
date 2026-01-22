@@ -3,10 +3,9 @@ import os
 import sys
 from datetime import datetime
 
-# Ensure repo root is on path when running as a script
+
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-# Try to use enhanced version with Ollama, fallback to original
 try:
     from app.pdf_rag_enhanced import EnhancedPDFRAG as PDFRAG
     USE_ENHANCED = True
@@ -19,7 +18,6 @@ from app.config import Config
 
 def evaluate_pdf_rag():
     """Evaluate the RAG system with comprehensive test cases"""
-    # Initialize RAG (with Ollama if available)
     if USE_ENHANCED:
         print("🚀 Using Enhanced RAG with Ollama LLM support")
         rag = PDFRAG(use_llm=True, llm_type="ollama")
@@ -56,7 +54,7 @@ def evaluate_pdf_rag():
     # Comprehensive test cases
     test_cases = [
         # ======================
-        # EXISTING TESTS (from your current evaluation)
+        # EXISTING TESTS 
         # ======================
         {
             "question": "What is the indirect cost rate for non-US NGOs?",
