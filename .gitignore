@@ -14,7 +14,7 @@ __pycache__/
 .idea/
 .env
 
-# Local artifacts
+# Local
 chroma_db/
 evaluation_report.json
 evaluation_report_detailed.json
