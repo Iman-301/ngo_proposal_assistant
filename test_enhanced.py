@@ -3,7 +3,7 @@
 import sys
 import os
 
-# Add parent directory to path
+
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 print("=" * 60)
@@ -17,7 +17,7 @@ except ImportError as e:
     print(f"[ERROR] Failed to import: {e}")
     sys.exit(1)
 
-# Test 1: Initialize without LLM
+# Initialize without LLM
 print("\n[TEST 1] Initializing Enhanced RAG (no LLM)...")
 try:
     rag_no_llm = EnhancedPDFRAG(use_llm=False)
@@ -26,7 +26,7 @@ except Exception as e:
     print(f"[ERROR] Failed to initialize: {e}")
     sys.exit(1)
 
-# Test 2: Initialize with Ollama
+# Initialize with Ollama
 print("\n[TEST 2] Initializing Enhanced RAG with Ollama...")
 try:
     rag_with_llm = EnhancedPDFRAG(use_llm=True, llm_type="ollama")
