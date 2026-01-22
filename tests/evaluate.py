@@ -6,14 +6,26 @@ from datetime import datetime
 # Ensure repo root is on path when running as a script
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from app.pdf_rag import PDFRAG
+# Try to use enhanced version with Ollama, fallback to original
+try:
+    from app.pdf_rag_enhanced import EnhancedPDFRAG as PDFRAG
+    USE_ENHANCED = True
+except ImportError:
+    from app.pdf_rag import PDFRAG
+    USE_ENHANCED = False
+
 from app.config import Config
 
 
 def evaluate_pdf_rag():
     """Evaluate the RAG system with comprehensive test cases"""
-    # Initialize RAG
-    rag = PDFRAG()
+    # Initialize RAG (with Ollama if available)
+    if USE_ENHANCED:
+        print("🚀 Using Enhanced RAG with Ollama LLM support")
+        rag = PDFRAG(use_llm=True, llm_type="ollama")
+    else:
+        print("📚 Using standard RAG (no LLM)")
+        rag = PDFRAG()
     kb_path = Config.resolve_kb_path(None)
     
     print("=" * 60)
@@ -268,7 +280,7 @@ def evaluate_pdf_rag():
     report = {
         "metadata": {
             "evaluation_date": datetime.now().isoformat(),
-            "system_version": "NGO Proposal Assistant RAG v1.0",
+            "system_version": "NGO Proposal Assistant RAG v1.0" + (" (Enhanced with Ollama)" if USE_ENHANCED else ""),
             "documents_used": [f for f in os.listdir(kb_path) if f.endswith('.pdf')],
             "total_chunks_loaded": doc_count,
         },
@@ -363,7 +375,10 @@ def run_quick_demo():
     print("Try asking questions about NGO/donor requirements!")
     print("Type 'exit' to quit\n")
     
-    rag = PDFRAG()
+    if USE_ENHANCED:
+        rag = PDFRAG(use_llm=True, llm_type="ollama")
+    else:
+        rag = PDFRAG()
     kb_path = Config.resolve_kb_path(None)
     rag.load_pdfs_from_folder(kb_path)
     rag.build_vector_store()

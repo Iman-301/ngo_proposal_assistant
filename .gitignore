@@ -17,6 +17,7 @@ __pycache__/
 # Local artifacts
 chroma_db/
 evaluation_report.json
+evaluation_report_detailed.json
 *.log
 .cache/
 .huggingface/
