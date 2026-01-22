@@ -44,7 +44,7 @@ python tests/evaluate.py
 - TF-IDF (1-2 grams, English stop-words) builds a sparse index.
 - Queries retrieve top-K chunks via cosine similarity; answer = short summary + citations + snippets.
 
-## Extending (Optional)
+## Extending
 - LLM summarization: Wrap retrieved snippets with an LLM (e.g., OpenAI) to draft polished answers.
 - File formats: Add PDF/DOCX loaders (e.g., `pypdf`, `python-docx`).
 - Better chunking: Heading-aware or semantic splitting.
