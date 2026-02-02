@@ -1,56 +1,63 @@
-# NGO / Project Proposal Assistant (RAG)
+## NGO Proposal Assistant (Offline PDF RAG + Optional LLM)
 
-Objective: Answer questions about donor and NGO proposal requirements using a lightweight Retrieval-Augmented Generation (RAG) approach over local documents (templates, donor guidelines).
+An offline RAG system for NGO proposal guidance. It ingests PDF guidelines, builds a local vector index, retrieves relevant passages, and generates answers. It works fully offline with local embeddings. Optional LLM support is available via Ollama for more fluent summaries.
 
-## Features
-- TF-IDF + cosine similarity retriever over `.md`/`.txt` in `kb/`.
-- Simple, citation-rich answers with top supporting snippets.
-- CLI for interactive Q&A and batch questions.
-- Basic evaluation script for requirement accuracy.
+### Features
+- PDF ingestion and chunking
+- Local embeddings (no OpenAI key required)
+- Vector search with citations (Chroma)
+- Optional local LLM via Ollama
+- CLI and web UI
+- Evaluation scripts and reports
 
-## Quickstart
+### Requirements
+- Python 3.10+ (recommended: 3.11)
+- Windows/macOS/Linux
+- Optional: Ollama for LLM answers
 
-1. Create and activate a Python 3.10+ environment, then install deps:
-```bash
-pip install -r requirements.txt
-```
+### Setup
+1. Create a virtual environment and install dependencies:
+   - Windows PowerShell
+	- `python -m venv .venv`
+	- `.
+venv\Scripts\Activate.ps1`
+	- `python -m pip install -r requirements.txt`
 
-2. Run the CLI in interactive mode (defaults to `kb/`):
-```bash
-python -m app.cli --pretty
-```
-Ask something like: "What is the cost share requirement?"
 
-3. Or pass a one-off question:
-```bash
-python -m app.cli "What reports are required?" --pretty
-```
+### Run the Web UI
+Start the web app:
+- `python -m app.web`
+Then open: `http://localhost:5001`
 
-4. Evaluate requirement accuracy on sample questions:
-```bash
-python tests/evaluate.py
-```
+Upload a PDF and ask a question. The answer includes sources and page references.
 
-5. (Optional) PDF RAG, offline embeddings (no OpenAI key):
-- Place PDFs in `kb/`.
-- Run a small script that uses `PDFRAG` (see `app/pdf_rag.py`): load PDFs, build vector store, call `create_retriever()`, then `answer(question)`. This path uses local `sentence-transformers` embeddings and no LLM/API calls.
+### Enable LLM (Ollama)
+The project works without an LLM. For better summaries, use Ollama:
+- `ollama serve`
+- `ollama pull llama3.2`
 
-## Add Your Documents
-- Put donor RFPs, guidelines, and proposal templates in `kb/` as `.md` or `.txt`.
-- For a custom path: `python -m app.cli --kb path/to/your/kb --pretty`.
+The system will auto-detect Ollama and use it when available.
 
-## How It Works
-- Documents are chunked (~800 chars with overlap) to preserve context.
-- TF-IDF (1-2 grams, English stop-words) builds a sparse index.
-- Queries retrieve top-K chunks via cosine similarity; answer = short summary + citations + snippets.
+### Evaluation
+Run evaluation:
+- `python tests/evaluate.py`
 
-## Extending
-- LLM summarization: Wrap retrieved snippets with an LLM (e.g., OpenAI) to draft polished answers.
-- File formats: Add PDF/DOCX loaders (e.g., `pypdf`, `python-docx`).
-- Better chunking: Heading-aware or semantic splitting.
-- Evaluation: Use a larger QA set and exact-match/ROUGE/semantic similarity metrics.
+Outputs:
+- `evaluation_report.json`
+- `evaluation_report_detailed.json`
 
-## Notes
-- This project intentionally avoids external APIs to run fully offline.
-- Replace the sample KB with your actual donor materials for real accuracy.
-- The PDF RAG path (`app/pdf_rag.py`) now uses local embeddings (HuggingFace). You can ignore `OPENAI_API_KEY` unless you re-enable OpenAI models.
+### Project Structure
+- `app/pdf_rag.py`: PDF RAG pipeline (chunking, embeddings, retrieval, citations)
+- `app/cli.py`: CLI entrypoint
+- `app/web.py`: Flask web UI
+- `app/config.py`: configuration defaults and env overrides
+- `tests/evaluate.py`: evaluation runner
+
+### Troubleshooting
+- Hugging Face download timeout: re-run once; the model caches locally after first download.
+- Windows symlink warning: enable Developer Mode or set `HF_HUB_DISABLE_SYMLINKS_WARNING=1`.
+- Ollama model not found: run `ollama pull llama3.2`.
+
+### Notes
+- The vector store is saved in `chroma_db/` and should not be committed.
+- `.env` is ignored by git; keep secrets there if needed.

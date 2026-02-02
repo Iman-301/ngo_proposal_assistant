@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NGO Proposal Assistant</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f7fa; color: #333; line-height: 1.6; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 2rem; border-radius: 12px; margin-bottom: 2rem; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .header h1 { margin-bottom: 0.5rem; font-size: 2.5rem; }
+        .header p { opacity: 0.9; font-size: 1.1rem; }
+        
+        .upload-section, .question-section { background: white; border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .section-title { font-size: 1.25rem; font-weight: 600; margin-bottom: 1rem; color: #2d3748; border-bottom: 2px solid #e2e8f0; padding-bottom: 0.5rem; }
+        
+        .upload-area { border: 2px dashed #cbd5e0; border-radius: 8px; padding: 2rem; text-align: center; margin-bottom: 1rem; }
+        .upload-area.dragover { border-color: #667eea; background: #f7fafc; }
+        
+        .btn { background: #667eea; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 8px; font-size: 1rem; font-weight: 500; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; gap: 0.5rem; }
+        .btn:hover { background: #5a67d8; transform: translateY(-1px); }
+        .btn:disabled { background: #a0aec0; cursor: not-allowed; }
+        .btn-secondary { background: #718096; }
+        .btn-secondary:hover { background: #4a5568; }
+        
+        textarea { width: 100%; padding: 1rem; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 1rem; resize: vertical; min-height: 120px; font-family: inherit; }
+        textarea:focus { outline: none; border-color: #667eea; box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1); }
+        
+        .result-section { background: white; border-radius: 12px; padding: 1.5rem; margin-top: 1.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .answer-box { background: #f7fafc; border-left: 4px solid #667eea; padding: 1rem; border-radius: 0 8px 8px 0; margin-bottom: 1.5rem; }
+        .answer-box h3 { color: #2d3748; margin-bottom: 0.5rem; }
+        
+        .source-card { background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 1rem; margin-bottom: 1rem; }
+        .source-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; }
+        .source-title { font-weight: 600; color: #2d3748; }
+        .source-meta { font-size: 0.875rem; color: #718096; }
+        .source-snippet { color: #4a5568; line-height: 1.5; margin-top: 0.5rem; }
+        
+        .badge { display: inline-block; padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; }
+        .badge-success { background: #c6f6d5; color: #22543d; }
+        .badge-warning { background: #feebc8; color: #744210; }
+        .badge-info { background: #bee3f8; color: #2c5282; }
+        
+        .alert { padding: 1rem; border-radius: 8px; margin-bottom: 1rem; }
+        .alert-success { background: #c6f6d5; color: #22543d; border: 1px solid #9ae6b4; }
+        .alert-error { background: #fed7d7; color: #742a2a; border: 1px solid #fc8181; }
+        .alert-info { background: #bee3f8; color: #2c5282; border: 1px solid #90cdf4; }
+        
+        .hidden { display: none; }
+        
+        .status-bar { display: flex; align-items: center; gap: 1rem; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #e2e8f0; }
+        
+        .loading { display: none; text-align: center; padding: 2rem; }
+        .loading-spinner { border: 3px solid #f3f3f3; border-top: 3px solid #667eea; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto 1rem; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>📋 NGO Proposal Assistant</h1>
+            <p>Upload donor guidelines and ask questions about requirements</p>
+            <div class="status-bar">
+                {% if has_pdf %}
+                    <span class="badge badge-success">✓ Ready ({{ pdf_count }} PDF loaded)</span>
+                {% else %}
+                    <span class="badge badge-warning">Upload PDF to begin</span>
+                {% endif %}
+                {% if pdf_count > 0 %}
+                    <form action="/clear" method="post" style="display: inline;">
+                        <button type="submit" class="btn btn-secondary">Clear Session</button>
+                    </form>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Upload Section -->
+        <div class="upload-section">
+            <h2 class="section-title">📁 Upload PDF Documents</h2>
+            <form method="post" enctype="multipart/form-data" id="uploadForm">
+                <div class="upload-area" id="dropArea">
+                    <input type="file" id="pdfFile" name="pdf_file" accept=".pdf" style="display: none;">
+                    <p style="margin-bottom: 1rem; color: #4a5568;">Drag & drop a PDF file here, or click to browse</p>
+                    <button type="button" class="btn" onclick="document.getElementById('pdfFile').click()">
+                        📄 Choose PDF File
+                    </button>
+                    <p id="fileStatus" style="margin-top: 1rem; font-size: 0.875rem; color: #718096;">Max file size: 50MB</p>
+                </div>
+                <div style="margin-top: 1rem;">
+                    <button type="submit" class="btn">🚀 Upload & Process</button>
+                </div>
+            </form>
+        </div>
+        
+        <!-- Question Section -->
+        <div class="question-section">
+            <h2 class="section-title">❓ Ask Questions</h2>
+            <form method="post" id="questionForm">
+                <textarea name="question" id="questionInput" placeholder="Example: Who is eligible for GPSA grants? What is the maximum grant amount? What are the reporting requirements?" {% if not has_pdf %}disabled{% endif %}></textarea>
+                <div style="margin-top: 1rem; display: flex; gap: 1rem; align-items: center;">
+                    <button type="submit" class="btn" {% if not has_pdf %}disabled{% endif %}>
+                        🔍 Ask Question
+                    </button>
+                    <div style="font-size: 0.875rem; color: #718096;">
+                        {% if has_pdf %}
+                            System is ready for questions
+                        {% else %}
+                            Please upload a PDF first
+                        {% endif %}
+                    </div>
+                </div>
+            </form>
+            
+            <div style="margin-top: 1.5rem;">
+                <p style="font-weight: 500; margin-bottom: 0.5rem; color: #4a5568;">Sample questions you can try:</p>
+                <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+                    {% for sample in ["Who is eligible for grants?", "What is the maximum funding amount?", "What are the reporting requirements?", "What is the indirect cost rate?", "How to submit a proposal?"] %}
+                        <button type="button" class="btn btn-secondary" onclick="document.getElementById('questionInput').value = '{{ sample }}'">
+                            {{ sample }}
+                        </button>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Loading Indicator -->
+        <div class="loading" id="loadingIndicator">
+            <div class="loading-spinner"></div>
+            <p>Searching through documents...</p>
+        </div>
+        
+        <!-- Result Section -->
+        {% if result %}
+            <div class="result-section">
+                <h2 class="section-title">📝 Answer</h2>
+                
+                <div class="answer-box">
+                    <h3>{{ result.question }}</h3>
+                    <p>{{ result.summary }}</p>
+                    <div style="margin-top: 1rem; display: flex; gap: 0.5rem; align-items: center;">
+                        <span class="badge badge-info">
+                            {% if result.llm_used %}
+                                🤖 LLM Enhanced
+                            {% else %}
+                                🔍 Retrieval Only
+                            {% endif %}
+                        </span>
+                        <span class="badge">
+                            Type: {{ result.question_type }}
+                        </span>
+                    </div>
+                </div>
+                
+                <h3 style="margin-top: 2rem; margin-bottom: 1rem;">📚 Sources</h3>
+                {% for source in result.sources %}
+                    <div class="source-card">
+                        <div class="source-header">
+                            <div class="source-title">{{ source.source }} (Page {{ source.page }})</div>
+                            <div class="source-meta">{{ source.donor }} • {{ source.section_type|title }}</div>
+                        </div>
+                        <div class="source-snippet">{{ source.snippet }}</div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+        
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ 'success' if '✅' in message else 'error' if '❌' in message else 'info' }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
+    
+    <script>
+        // Drag and drop functionality
+        const dropArea = document.getElementById('dropArea');
+        const fileInput = document.getElementById('pdfFile');
+        
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dropArea.addEventListener(eventName, preventDefaults, false);
+        });
+        
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+        
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropArea.addEventListener(eventName, highlight, false);
+        });
+        
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropArea.addEventListener(eventName, unhighlight, false);
+        });
+        
+        function highlight() {
+            dropArea.classList.add('dragover');
+        }
+        
+        function unhighlight() {
+            dropArea.classList.remove('dragover');
+        }
+        
+        dropArea.addEventListener('drop', handleDrop, false);
+        
+            function handleDrop(e) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            fileInput.files = files;
+                updateFileStatus(files);
+        }
+        
+        // File input change handler
+        fileInput.addEventListener('change', function() {
+            updateFileStatus(this.files);
+        });
+
+        function updateFileStatus(files) {
+            const status = document.getElementById('fileStatus');
+            if (!status) return;
+            if (files && files.length > 0) {
+                status.style.color = '#38a169';
+                status.style.fontWeight = '500';
+                status.textContent = `📄 ${files[0].name} selected. Click "Upload & Process" to continue.`;
+            } else {
+                status.style.color = '#718096';
+                status.style.fontWeight = '400';
+                status.textContent = 'Max file size: 50MB';
+            }
+        }
+        
+        // Question form submission
+        document.getElementById('questionForm')?.addEventListener('submit', function() {
+            document.getElementById('loadingIndicator').style.display = 'block';
+        });
+        
+        // Auto-focus question input when PDF is loaded
+        {% if has_pdf and not result %}
+            document.getElementById('questionInput')?.focus();
+        {% endif %}
+    </script>
+</body>
+</html>
